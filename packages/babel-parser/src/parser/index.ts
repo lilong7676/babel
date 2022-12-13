@@ -37,13 +37,18 @@ export default class Parser extends StatementParser {
   }
 
   parse(): N.File {
+    // 进入到初始作用域中
     this.enterInitialScopes();
+    // 初始化 file、program 节点
     const file = this.startNode() as N.File;
     const program = this.startNode() as N.Program;
+    // 获取并更新下一个 token 信息
     this.nextToken();
     file.errors = null;
+    // 从当前文件入口开始解析
     this.parseTopLevel(file, program);
     file.errors = this.state.errors;
+    // 返回解析结果，即 ast
     return file;
   }
 }

@@ -113,6 +113,7 @@ export default abstract class Tokenizer extends CommentsParser {
       this.pushToken(new Token(this.state));
     }
 
+    // 记录 lastToken 位置信息，用来 recover
     this.state.lastTokStart = this.state.start;
     this.state.lastTokEndLoc = this.state.endLoc;
     this.state.lastTokStartLoc = this.state.startLoc;
@@ -120,7 +121,8 @@ export default abstract class Tokenizer extends CommentsParser {
   }
 
   // TODO
-
+  // 判断如果当前 token 是指定的类型，则解析下一个 token，并返回 true
+  // 否则 返回 false
   eat(type: TokenType): boolean {
     if (this.match(type)) {
       this.next();
@@ -248,14 +250,19 @@ export default abstract class Tokenizer extends CommentsParser {
   // properties.
 
   nextToken(): void {
+    // 忽略空白字符（空格、tab、换行等）并更新当前位置信息
     this.skipSpace();
+    // 记录当前 token 开始字符位置
     this.state.start = this.state.pos;
+    // 如果不是 “临时向前看”，则记录 token 开始位置（行、列、index）
     if (!this.isLookahead) this.state.startLoc = this.state.curPosition();
+    // 如果当前 tokenizer 的位置已经到了 input 的末尾
     if (this.state.pos >= this.length) {
+      // 则结束本次 token 查找，并更新当前 token 的信息（位置、token类型、token值）到 state 上
       this.finishToken(tt.eof);
       return;
     }
-
+    // 根据当前的 字符，读取相应的 token
     this.getTokenFromCode(this.codePointAtPos(this.state.pos));
   }
 
@@ -443,12 +450,13 @@ export default abstract class Tokenizer extends CommentsParser {
   // the token, so that the next one's `start` will point at the
   // right position.
 
+  // 结束本次 token 查找，并更新 token 信息到当前状态
   finishToken(type: TokenType, val?: any): void {
     this.state.end = this.state.pos;
     this.state.endLoc = this.state.curPosition();
     const prevType = this.state.type;
-    this.state.type = type;
-    this.state.value = val;
+    this.state.type = type; // identifier
+    this.state.value = val; // test
 
     if (!this.isLookahead) {
       this.updateContext(prevType);
@@ -695,9 +703,11 @@ export default abstract class Tokenizer extends CommentsParser {
 
   readToken_atSign(): void {
     const next = this.input.charCodeAt(this.state.pos + 1);
-
-    // '@@'
-    if (
+    // 如果下一个是 '!', 即 '@!' 的情况，那么我们自定义语法
+    if (next === charCodes.exclamationMark) {
+      this.finishOp(tt.atEM, 2);
+    } else if (
+      // '@@'
       next === charCodes.atSign &&
       this.hasPlugin([
         "pipelineOperator",
@@ -822,6 +832,7 @@ export default abstract class Tokenizer extends CommentsParser {
     }
   }
 
+  // Tokenizer 的核心逻辑
   getTokenFromCode(code: number): void {
     switch (code) {
       // The interpretation of a dot depends on whether it is followed
@@ -1013,6 +1024,7 @@ export default abstract class Tokenizer extends CommentsParser {
         return;
 
       default:
+        // 如果是一个合法的标识符，则读取该标识符
         if (isIdentifierStart(code)) {
           this.readWord(code);
           return;
@@ -1379,6 +1391,7 @@ export default abstract class Tokenizer extends CommentsParser {
   // When `firstCode` is given, it assumes it is always an identifier start and
   // will skip reading start position again
 
+  // 读取一个标识符
   readWord1(firstCode?: number): string {
     this.state.containsEsc = false;
     let word = "";
@@ -1428,14 +1441,20 @@ export default abstract class Tokenizer extends CommentsParser {
   // Read an identifier or keyword token. Will check for reserved
   // words when necessary.
 
+  // 读取一个标识符，可能为关键字
   readWord(firstCode?: number): void {
+    // 读取一个合法的标识符
     const word = this.readWord1(firstCode);
+    // 该标识符是否是关键字
     const type = keywordTypes.get(word);
+    // 标识符是关键字
     if (type !== undefined) {
       // We don't use word as state.value here because word is a dynamic string
       // while token label is a shared constant string
+      // 结束本次 token查找，并更新相关信息到状态机
       this.finishToken(type, tokenLabelName(type));
     } else {
+      // 标识符不是关键字，则 token 类型设置为 tt.name，如 某个函数的名字
       this.finishToken(tt.name, word);
     }
   }

@@ -349,10 +349,13 @@ export default abstract class LValParser extends NodeUtils {
 
   // https://tc39.es/ecma262/#prod-BindingRestProperty
   // https://tc39.es/ecma262/#prod-BindingRestElement
+  // rest 参数的处理
   parseRestBinding(this: Parser): RestElement {
     const node = this.startNode<RestElement>();
     this.next(); // eat `...`
+    // 具体的参数处理逻辑
     node.argument = this.parseBindingAtom();
+    // 当前 node 解析结束
     return this.finishNode(node, "RestElement");
   }
 
@@ -360,27 +363,33 @@ export default abstract class LValParser extends NodeUtils {
   parseBindingAtom(this: Parser): Pattern {
     // https://tc39.es/ecma262/#prod-BindingPattern
     switch (this.state.type) {
+      // 如果当前 token 是 '['，则是 ...[] 的形式
       case tt.bracketL: {
         const node = this.startNode<ArrayPattern>();
         this.next();
         // @ts-expect-error: Fixme: TSParameterProperty can not be assigned to node.elements
+        // 解析数组元素列表
         node.elements = this.parseBindingList(
           tt.bracketR,
           charCodes.rightSquareBracket,
           true,
         );
+        // 当前 node 解析结束
         return this.finishNode(node, "ArrayPattern");
       }
 
+      // 当前 token 是 '{'，则是 ...{} 的形式
       case tt.braceL:
         return this.parseObjectLike(tt.braceR, true);
     }
 
     // https://tc39.es/ecma262/#prod-BindingIdentifier
+    // 否则，则尝试解析为 标识符
     return this.parseIdentifier();
   }
 
   // https://tc39.es/ecma262/#prod-BindingElementList
+  // 解析函数参数列表
   parseBindingList(
     this: Parser,
     close: TokenType,
@@ -390,23 +399,31 @@ export default abstract class LValParser extends NodeUtils {
   ): Array<Pattern | TSParameterProperty> {
     const elts: Array<Pattern | TSParameterProperty> = [];
     let first = true;
+    // 只要没有遇到 终止符，就继续遍历
     while (!this.eat(close)) {
+      // 如果是第一个
       if (first) {
         first = false;
       } else {
+        // 否则下一个必须是 逗号
         this.expect(tt.comma);
       }
+      // 如果允许参数为空并且当前 token 为 逗号
       if (allowEmpty && this.match(tt.comma)) {
+        // 则参数值为 null
         elts.push(null);
       } else if (this.eat(close)) {
+        // 如果遇到了 终结符，则终止循环
         break;
       } else if (this.match(tt.ellipsis)) {
+        // 如果当前 token 为 省略号，则处理 rest 参数
         elts.push(this.parseAssignableListItemTypes(this.parseRestBinding()));
         if (!this.checkCommaAfterRest(closeCharCode)) {
           this.expect(close);
           break;
         }
       } else {
+        // 装饰器相关逻辑
         const decorators = [];
         if (this.match(tt.at) && this.hasPlugin("decorators")) {
           this.raise(Errors.UnsupportedParameterDecorator, {
@@ -420,6 +437,7 @@ export default abstract class LValParser extends NodeUtils {
         elts.push(this.parseAssignableListItem(allowModifiers, decorators));
       }
     }
+    // 返回参数列表
     return elts;
   }
 

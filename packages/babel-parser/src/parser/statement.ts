@@ -194,13 +194,17 @@ export default abstract class StatementParser extends ExpressionParser {
   // to its body instead of creating a new node.
 
   parseTopLevel(this: Parser, file: N.File, program: N.Program): N.File {
+    // 解析 program 节点
     file.program = this.parseProgram(program);
+    // 得到 注释内容
     file.comments = this.state.comments;
 
+    // 保留 token 内容
     if (this.options.tokens) {
       file.tokens = babel7CompatTokens(this.tokens, this.input);
     }
 
+    // 结束 topLevel 解析
     return this.finishNode(file, "File");
   }
 
@@ -210,8 +214,11 @@ export default abstract class StatementParser extends ExpressionParser {
     end: TokenType = tt.eof,
     sourceType: SourceType = this.options.sourceType,
   ): N.Program {
+    // sourceType "script", "module"
     program.sourceType = sourceType;
+    // 解析程序的 interpreter，如 #!bin/node
     program.interpreter = this.parseInterpreterDirective();
+    // 解析 block body
     this.parseBlockBody(program, true, true, end);
     if (
       this.inModule &&
@@ -223,6 +230,7 @@ export default abstract class StatementParser extends ExpressionParser {
       }
     }
     let finishedProgram: N.Program;
+    // 解析终止
     if (end === tt.eof) {
       // finish at eof for top level program
       finishedProgram = this.finishNode(program, "Program");
@@ -234,6 +242,7 @@ export default abstract class StatementParser extends ExpressionParser {
         createPositionWithColumnOffset(this.state.startLoc, -1),
       );
     }
+    // 返回解析结果节点
     return finishedProgram;
   }
 
@@ -348,14 +357,18 @@ export default abstract class StatementParser extends ExpressionParser {
   // when they are not at the top level
   parseStatement(
     this: Parser,
+    // 该语句的上下文，如 'with', 'while', 'async'
     context?: string | null,
+    // 当前代码是否在 topLevel
     topLevel?: boolean,
   ): N.Statement {
     let decorators: N.Decorator[] | null = null;
 
+    // 如果当前匹配到 @ 字符，则尝试解析为 decorators
     if (this.match(tt.at)) {
       decorators = this.parseDecorators(true);
     }
+    // 解析语句内容
     return this.parseStatementContent(context, topLevel, decorators);
   }
 
@@ -365,7 +378,9 @@ export default abstract class StatementParser extends ExpressionParser {
     topLevel?: boolean | null,
     decorators?: N.Decorator[] | null,
   ): N.Statement {
+    // 当前 token 类型
     const starttype = this.state.type;
+    // 初始化当前节点
     const node = this.startNode();
 
     // Most types of statements are recognized by the keyword they
@@ -383,8 +398,11 @@ export default abstract class StatementParser extends ExpressionParser {
         return this.parseDoStatement(node as Undone<N.DoWhileStatement>);
       case tt._for:
         return this.parseForStatement(node as Undone<N.ForStatement>);
+      // 这里可以以 函数 为例子，详细看下逻辑
       case tt._function:
+        // 如果下一个字符为 '.'， 说明是 `function.` 形式的调用
         if (this.lookaheadCharCode() === charCodes.dot) break;
+        // 校验函数语句合法性
         if (context) {
           if (this.state.strict) {
             this.raise(Errors.StrictFunction, { at: this.state.startLoc });
@@ -392,6 +410,7 @@ export default abstract class StatementParser extends ExpressionParser {
             this.raise(Errors.SloppyFunction, { at: this.state.startLoc });
           }
         }
+        // 关键点，这里的 context ，针对 function 来讲，目前只有 `async` 这一种可能性
         return this.parseFunctionStatement(
           node as Undone<N.FunctionDeclaration>,
           false,
@@ -881,13 +900,19 @@ export default abstract class StatementParser extends ExpressionParser {
     return this.parseFor(node as Undone<N.ForStatement>, init);
   }
 
+  // 解析函数语句
   parseFunctionStatement(
     this: Parser,
     node: Undone<N.FunctionDeclaration>,
     isAsync?: boolean,
+    // 当前是否是处于 函数声明 的位置，如果没有 context，则说明是处于 函数声明位置
     declarationPosition?: boolean,
   ): N.FunctionDeclaration {
+    // 解析下一个 token
+    // 可能为函数名字 或者函数参数列表
     this.next();
+    // 如果 declarationPosition 为 true, 则 函数语句类型 为 FUNC_STATEMENT ｜ 0，即 1
+    // 否则，函数语句类型为 FUNC_STATEMENT ｜ FUNC_HANGING_STATEMENT，即 001 ｜ 010，即 011 ，即 3
     return this.parseFunction(
       node,
       FUNC_STATEMENT | (declarationPosition ? 0 : FUNC_HANGING_STATEMENT),
@@ -1167,6 +1192,7 @@ export default abstract class StatementParser extends ExpressionParser {
   // strict"` declarations when `allowDirectives` is true (used for
   // function bodies).
 
+  // 解析 block
   parseBlock(
     this: Parser,
     allowDirectives: boolean = false,
@@ -1177,6 +1203,7 @@ export default abstract class StatementParser extends ExpressionParser {
     if (allowDirectives) {
       this.state.strictErrors.clear();
     }
+    // 期望 ‘{’
     this.expect(tt.braceL);
     if (createNewLexicalScope) {
       this.scope.enter(SCOPE_OTHER);
@@ -1204,9 +1231,13 @@ export default abstract class StatementParser extends ExpressionParser {
 
   parseBlockBody(
     this: Parser,
+    // 要 parse 的节点
     node: Undone<N.BlockStatementLike>,
+    // 是否允许指令 如： "use strict"
     allowDirectives: boolean | undefined | null,
+    // 是否是在 topLevel
     topLevel: boolean,
+    // 表示 block 的结束符， 如 "}"
     end: TokenType,
     afterBlockParse?: (hasStrictModeDirective: boolean) => void,
   ): void {
@@ -1234,12 +1265,17 @@ export default abstract class StatementParser extends ExpressionParser {
     afterBlockParse?: (hasStrictModeDirective: boolean) => void,
   ): void {
     const oldStrict = this.state.strict;
+    // 是否有 use strict 指令
     let hasStrictModeDirective = false;
+    // 解析后，是否不包含指令
     let parsedNonDirective = false;
 
+    // 只要没到 `end` 结束符，就一直解析
     while (!this.match(end)) {
+      // 解析单一语句
       const stmt = this.parseStatement(null, topLevel);
 
+      // 判断语句是否是 指令
       if (directives && !parsedNonDirective) {
         if (this.isValidDirective(stmt)) {
           const directive = this.stmtToDirective(stmt);
@@ -1436,45 +1472,67 @@ export default abstract class StatementParser extends ExpressionParser {
     statement: number = FUNC_NO_FLAGS,
     isAsync: boolean = false,
   ): T {
+    // 是否是函数声明
     const isStatement = statement & FUNC_STATEMENT;
     const isHangingStatement = statement & FUNC_HANGING_STATEMENT;
+    // 是否需要唯一标识
+    // 当是 export default function() {} 形式时，表明导出的是一个 匿名函数
+    // 此时，requireId 为 false
     const requireId = !!isStatement && !(statement & FUNC_NULLABLE_ID);
 
+    // 初始化一个空的 function node
     this.initFunction(node, isAsync);
 
+    // 如果当前 token 为 star，并且是一个未确定的函数语句，
+    // 则报错 不合法
     if (this.match(tt.star) && isHangingStatement) {
       this.raise(Errors.GeneratorInSingleStatementContext, {
         at: this.state.startLoc,
       });
     }
+    // 判断是否是 生成器函数
     node.generator = this.eat(tt.star);
+    // 实现自定义语法 @！
+    node.logThisFunc = this.eat(tt.atEM);
 
+    // 如果是函数声明
     if (isStatement) {
+      // 如果 requireId 为 true 或者 当前 token 为标识符，则为 函数名字
+      // 否则 为 null
       node.id = this.parseFunctionId(requireId);
     }
 
+    /**
+      表示当前是否可能在箭头函数的参数列表里，如 `(x)`，
+      但是不能确定，除非在后面遇到了 `=>`
+     */
     const oldMaybeInArrowParameters = this.state.maybeInArrowParameters;
     this.state.maybeInArrowParameters = false;
+
+    // 进入到 函数作用域
     this.scope.enter(SCOPE_FUNCTION);
     this.prodParam.enter(functionFlags(isAsync, node.generator));
 
+    // 如果不是函数声明，解析函数名字
     if (!isStatement) {
       node.id = this.parseFunctionId();
     }
 
+    // 解析函数参数
     this.parseFunctionParams(node, /* allowModifiers */ false);
 
     // For the smartPipelines plugin: Disable topic references from outer
     // contexts within the function body. They are permitted in function
     // default-parameter expressions, outside of the function body.
     this.withSmartMixTopicForbiddingContext(() => {
-      // Parse the function body.
+      // 解析函数 body
       this.parseFunctionBodyAndFinish(
         node,
         isStatement ? "FunctionDeclaration" : "FunctionExpression",
       );
     });
 
+    // 退出作用域
     this.prodParam.exit();
     this.scope.exit();
 
@@ -1485,30 +1543,38 @@ export default abstract class StatementParser extends ExpressionParser {
       this.registerFunctionStatementId(node as T);
     }
 
+    // 恢复
     this.state.maybeInArrowParameters = oldMaybeInArrowParameters;
+    // 返回函数节点
     return node as T;
   }
 
+  // 如果 requireId 为 true 或者 当前 token 为标识符，则为 函数名字
+  // 否则 为 null
   parseFunctionId(requireId?: boolean): N.Identifier | undefined | null {
     return requireId || tokenIsIdentifier(this.state.type)
       ? this.parseIdentifier()
       : null;
   }
 
+  // 解析函数参数
   parseFunctionParams(
     this: Parser,
     node: Undone<N.Function>,
     allowModifiers?: boolean,
   ): void {
+    // 下一个 token 必须是 左括号
     this.expect(tt.parenL);
+    // 进入到函数参数声明 scope
     this.expressionScope.enter(newParameterDeclarationScope());
+    // 解析函数参数列表
     node.params = this.parseBindingList(
       tt.parenR,
       charCodes.rightParenthesis,
       /* allowEmpty */ false,
       allowModifiers,
     );
-
+    // 退出 函数声明作用域
     this.expressionScope.exit();
   }
 
@@ -2349,7 +2415,7 @@ export default abstract class StatementParser extends ExpressionParser {
 
       return this.parseFunction(
         expr as Undone<N.FunctionExpression>,
-        FUNC_STATEMENT | FUNC_NULLABLE_ID,
+        FUNC_STATEMENT | FUNC_NULLABLE_ID, // 101
         isAsync,
       );
     }

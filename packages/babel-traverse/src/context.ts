@@ -105,6 +105,7 @@ export default class TraversalContext<S = unknown> {
         node[key],
       )
     ) {
+      // 开始遍历
       return this.visitQueue([this.create(node, node, key)]);
     } else {
       return false;
@@ -141,6 +142,7 @@ export default class TraversalContext<S = unknown> {
       if (visited.has(node)) continue;
       if (node) visited.add(node);
 
+      // 真正的调用遍历方法
       if (path.visit()) {
         stop = true;
         break;
@@ -173,6 +175,7 @@ export default class TraversalContext<S = unknown> {
     if (Array.isArray(nodes)) {
       return this.visitMultiple(nodes, node, key);
     } else {
+      // 遍历 单node
       return this.visitSingle(node, key);
     }
   }

@@ -66,8 +66,10 @@ function traverse<Options extends TraverseOptions>(
     return;
   }
 
+  // 格式化 visitor 对象
   visitors.explode(opts as Visitor);
 
+  // 开始遍历 ast
   traverseNode(parent, opts, scope, state, parentPath);
 }
 

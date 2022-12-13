@@ -28,9 +28,11 @@ export function traverseNode(
   const keys = VISITOR_KEYS[node.type];
   if (!keys) return false;
 
+  // 创建一个 traverseContext
   const context = new TraversalContext(scope, opts, state, path);
   for (const key of keys) {
     if (skipKeys && skipKeys[key]) continue;
+    // 遍历这个 node
     if (context.visit(node, key)) {
       return true;
     }

@@ -2522,6 +2522,7 @@ export default abstract class ExpressionParser extends LValParser {
     node.params = params as (N.Pattern | N.TSParameterProperty)[];
   }
 
+  // 解析函数体
   parseFunctionBodyAndFinish<
     T extends
       | N.Function
@@ -2531,6 +2532,7 @@ export default abstract class ExpressionParser extends LValParser {
   >(node: Undone<T>, type: T["type"], isMethod: boolean = false): T {
     // @ts-expect-error (node is not bodiless if we get here)
     this.parseFunctionBody(node, false, isMethod);
+    // 结束解析
     return this.finishNode(node, type);
   }
 
@@ -2541,7 +2543,9 @@ export default abstract class ExpressionParser extends LValParser {
     allowExpression?: boolean | null,
     isMethod: boolean = false,
   ): void {
+    // 是否是表达式
     const isExpression = allowExpression && !this.match(tt.braceL);
+    // 进入到 表达式 scope
     this.expressionScope.enter(newExpressionScope());
 
     if (isExpression) {
@@ -2566,6 +2570,8 @@ export default abstract class ExpressionParser extends LValParser {
         false,
         // Strict mode function checks after we parse the statements in the function body.
         (hasStrictModeDirective: boolean) => {
+          // 一些合法性检查，略
+
           const nonSimple = !this.isSimpleParamList(node.params);
 
           if (hasStrictModeDirective && nonSimple) {
@@ -2602,6 +2608,7 @@ export default abstract class ExpressionParser extends LValParser {
       this.prodParam.exit();
       this.state.labels = oldLabels;
     }
+    // 退出 scope 栈
     this.expressionScope.exit();
   }
 
@@ -2758,6 +2765,9 @@ export default abstract class ExpressionParser extends LValParser {
     let name: string;
 
     const { startLoc, type } = this.state;
+
+    console.log("identifier value", this.state.value);
+    console.log("next identifier value", this.lookahead().value);
 
     if (tokenIsKeywordOrIdentifier(type)) {
       name = this.state.value;

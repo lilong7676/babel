@@ -198,6 +198,7 @@ export interface BodilessFunctionOrMethodBase extends HasDecorators {
   id: Identifier | undefined | null;
   params: Array<Pattern | TSParameterProperty>;
   generator: boolean;
+  logThisFunc: boolean;
   async: boolean;
   // TODO: All not in spec
   expression: boolean;

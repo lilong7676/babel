@@ -48,12 +48,16 @@ export default class ScopeHandler<IScope extends Scope = Scope> {
     this.inModule = inModule;
   }
 
+  // 判断是否在 topLevel
   get inTopLevel() {
     return (this.currentScope().flags & SCOPE_PROGRAM) > 0;
   }
+
+  // 判断是否在 function 作用域
   get inFunction() {
     return (this.currentVarScopeFlags() & SCOPE_FUNCTION) > 0;
   }
+  // 判断是否允许 super 关键字调用
   get allowSuper() {
     return (this.currentThisScopeFlags() & SCOPE_SUPER) > 0;
   }
@@ -90,6 +94,7 @@ export default class ScopeHandler<IScope extends Scope = Scope> {
     return new Scope(flags);
   }
 
+  // 表示进入到一个新的 scope
   enter(flags: ScopeFlags) {
     /*:: +createScope: (flags: ScopeFlags) => IScope; */
     // @ts-expect-error This method will be overwritten by subclasses

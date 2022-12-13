@@ -12,6 +12,7 @@ export function call(this: NodePath, key: string): boolean {
   this.debug(key);
 
   if (this.node) {
+    // 调用相应的 key 方法，如 'enter'
     if (this._call(opts[key])) return true;
   }
 
@@ -89,6 +90,7 @@ export function visit(this: NodePath): boolean {
   // before calling the enter visitor, but it can be true in case of
   // a requeued node (e.g. by .replaceWith()) that is then marked
   // with .skip().
+  // 调用 enter 方法
   if (this.shouldSkip || this.call("enter")) {
     this.debug("Skip...");
     return this.shouldStop;

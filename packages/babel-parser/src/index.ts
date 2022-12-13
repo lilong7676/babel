@@ -25,6 +25,9 @@ import "./tokenizer/context";
 import type { Expression, File } from "./types";
 
 export function parse(input: string, options?: Options): File {
+  // sourceType 可能的值为 "script", "module", or "unambiguous"，
+  // 如果是 unambiguous，则 babel 会尝试判断代码中是否包含 import export 语句来确定具体类型
+
   if (options?.sourceType === "unambiguous") {
     options = {
       ...options,

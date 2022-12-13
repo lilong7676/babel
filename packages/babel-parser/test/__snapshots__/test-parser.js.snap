@@ -1,0 +1,113 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`测试自定义语法 @@ parse -> ast should parse 1`] = `
+Node {
+  "comments": Array [],
+  "end": 20,
+  "errors": Array [],
+  "loc": SourceLocation {
+    "end": Position {
+      "column": 20,
+      "index": 20,
+      "line": 1,
+    },
+    "filename": undefined,
+    "identifierName": undefined,
+    "start": Position {
+      "column": 0,
+      "index": 0,
+      "line": 1,
+    },
+  },
+  "program": Node {
+    "body": Array [
+      Node {
+        "async": false,
+        "body": Node {
+          "body": Array [],
+          "directives": Array [],
+          "end": 20,
+          "loc": SourceLocation {
+            "end": Position {
+              "column": 20,
+              "index": 20,
+              "line": 1,
+            },
+            "filename": undefined,
+            "identifierName": undefined,
+            "start": Position {
+              "column": 18,
+              "index": 18,
+              "line": 1,
+            },
+          },
+          "start": 18,
+          "type": "BlockStatement",
+        },
+        "end": 20,
+        "generator": false,
+        "id": Node {
+          "end": 15,
+          "loc": SourceLocation {
+            "end": Position {
+              "column": 15,
+              "index": 15,
+              "line": 1,
+            },
+            "filename": undefined,
+            "identifierName": "foo",
+            "start": Position {
+              "column": 12,
+              "index": 12,
+              "line": 1,
+            },
+          },
+          "name": "foo",
+          "start": 12,
+          "type": "Identifier",
+        },
+        "loc": SourceLocation {
+          "end": Position {
+            "column": 20,
+            "index": 20,
+            "line": 1,
+          },
+          "filename": undefined,
+          "identifierName": undefined,
+          "start": Position {
+            "column": 0,
+            "index": 0,
+            "line": 1,
+          },
+        },
+        "logThisFunc": true,
+        "params": Array [],
+        "start": 0,
+        "type": "FunctionDeclaration",
+      },
+    ],
+    "directives": Array [],
+    "end": 20,
+    "interpreter": null,
+    "loc": SourceLocation {
+      "end": Position {
+        "column": 20,
+        "index": 20,
+        "line": 1,
+      },
+      "filename": undefined,
+      "identifierName": undefined,
+      "start": Position {
+        "column": 0,
+        "index": 0,
+        "line": 1,
+      },
+    },
+    "sourceType": "module",
+    "start": 0,
+    "type": "Program",
+  },
+  "start": 0,
+  "type": "File",
+}
+`;
